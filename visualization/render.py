@@ -10,7 +10,6 @@ WIDTH, HEIGHT = 800, 480
 BG, PANEL = "#101b2e", "#192a43"
 INK, MUTED = "#f0f6ff", "#bacee7"
 MINT, AMBER, BLUE = "#80e8cf", "#ffc385", "#8ca9cc"
-EXPONENTS = "⁰¹²³⁴⁵⁶⁷"
 
 
 def font(name, size):
@@ -30,14 +29,14 @@ def project(x,y,z,angle):
 
 
 def draw_frame(angle, fonts):
-    title, label, node, strong=fonts
+    title, label, node, exponent, strong=fonts
     image=Image.new("RGB",(WIDTH,HEIGHT),BG)
     draw=ImageDraw.Draw(image)
     draw.text((28,22),"A fair bit, two bidding schedules",font=title,fill=INK)
     draw.rounded_rectangle((26,90,774,365),14,fill=PANEL)
     draw.text((45,103),"Seed 0",font=label,fill=MINT)
     draw.text((169,103),"Seed 1",font=label,fill=AMBER)
-    draw.text((520,103),"Target just above a⁵",font=label,fill=INK)
+    draw.text((753,103),"Target just above a^5",font=label,fill=INK,anchor="ra")
     colored=[]
     for seed,y in enumerate((1.16,-1.16)):
         color=(MINT,AMBER)[seed]
@@ -59,17 +58,19 @@ def draw_frame(angle, fonts):
         radius=22 if idx>=6 else 17
         fill=color if idx>=6 else PANEL
         draw.ellipse((x-radius,y-radius,x+radius,y+radius),fill=fill,outline=color,width=3)
-        draw.text((x,y-1),"a"+EXPONENTS[idx],font=node,fill=BG if idx>=6 else INK,anchor="mm")
+        text_color=BG if idx>=6 else INK
+        draw.text((x-3,y),"a",font=node,fill=text_color,anchor="mm")
+        draw.text((x+7,y-6),str(idx),font=exponent,fill=text_color,anchor="mm")
     draw.text((45,321),"Filled bids are the two stopping bids.",font=label,fill=MUTED)
     draw.text((30,387),"6305/1944",font=strong,fill=MINT)
-    draw.text((292,393),"right-limit ratio at a⁵",font=label,fill=INK)
+    draw.text((292,393),"right-limit ratio at a^5",font=label,fill=INK)
     draw.text((30,442),"At later breakpoints the ratio approaches 27/8.",font=label,fill=INK)
     return image
 
 
 def main():
     fonts=(font("Arial Bold.ttf",42),font("Arial.ttf",27),
-           font("Arial Bold.ttf",22),font("Arial Bold.ttf",40))
+           font("Arial Bold.ttf",22),font("Arial Bold.ttf",14),font("Arial Bold.ttf",40))
     frames=[draw_frame(.30*sin(tau*i/72)-.16,fonts) for i in range(72)]
     frames[0].save(Path(__file__).with_name("interleaved-bids.gif"),save_all=True,
                    append_images=frames[1:],duration=84,loop=0,optimize=False)
