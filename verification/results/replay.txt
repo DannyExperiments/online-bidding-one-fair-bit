@@ -1,0 +1,4 @@
+Geometric schedules: 480 interiors, 480 endpoints, 480 right limits.
+Initial target u=1 checked for one through eight seeds.
+Cyclic reassignment: 42 targets in three tied test collections.
+Fair bit at a^5+: seed stops a^6 and a^7; right-limit ratio 6305/1944; optimum 27/8.

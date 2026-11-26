@@ -1,0 +1,94 @@
+\documentclass[11pt,a4paper]{amsart}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amssymb}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={Online bidding with one fair bit}}
+\DeclareMathSizes{8}{8}{8}{8}
+\DeclareMathSizes{9}{9}{8}{8}
+\DeclareMathSizes{10.95}{10.95}{8}{8}
+\newtheorem{theorem}{Theorem}
+\title{Online bidding with one fair bit}
+\date{November 27, 2026}
+
+\begin{document}
+\begin{abstract}
+Angelopoulos and Simon ask for the optimal competitive ratio of online bidding with one random bit. With a fair bit and a target fixed independently of it, the ratio is \(27/8\). More generally, \(k\) equally likely schedules give \((1+1/k)^{k+1}\). We transfer the classical optimum for cyclic contract scheduling to this bidding problem and give a direct proof. An optimal strategy uses the \(k\) residue classes of one geometric progression.
+\end{abstract}
+\maketitle
+
+\section{Model and result}
+
+In online bidding a fixed target \(u\ge1\) is unknown to the bidder. The bidder pays successive positive bids through and including the first bid at least \(u\). For \(k\) equally likely seeds, the input-independent seed is drawn once and selects a schedule \(B_i\), \(0\le i<k\). The competitive ratio is
+\[
+ R=\sup_{u\ge1}\frac{1}{ku}\sum_{i=0}^{k-1}\operatorname{cost}(B_i,u).
+\]
+Upon each unsuccessful bid the only feedback is failure. Fixing a seed therefore determines its whole bid sequence along the failure history. A finite competitive ratio requires every schedule to reach all targets. Bids below \(1\) and bids that do not establish a new maximum can be discarded without increasing cost, so we may use strictly increasing unbounded schedules with bids at least \(1\).
+
+\begin{theorem}\label{thm:main}
+The minimum competitive ratio with \(k\ge1\) equally likely seeds is
+\[
+ \left(1+\frac1k\right)^{k+1}.
+\]
+In particular, one fair bit gives \(27/8\).
+\end{theorem}
+
+The theorem answers the bidding question in the conclusion of Angelopoulos and Simon \cite[\S6]{as}, with the model of their equation~(1). The cases of no randomness and unrestricted randomization have ratios \(4\) and \(e\), respectively \cite[Thms.~1--2]{ckny}. Here \(b\) independent fair bits correspond to \(k=2^b\), including algorithms that leave some bits unused. A target-dependent advice message can select a schedule based on information about the target. That is a different optimization from the uniform mean used here \cite{aak,abds}.
+
+\section{The transfer from contract scheduling}
+
+Merge all schedules into a nondecreasing list \(c_1,c_2,\ldots\), keeping one entry per occurrence, and set \(S_j=\sum_{i=1}^j c_i\), \(S_0=0\). For a target \(u\), let \(j\) be the number of entries strictly below \(u\). Each of those entries is paid and the \(k\) stopping bids occupy distinct later positions. Thus the total charge is at least \(S_{j+k}\). Reassigning the merged list cyclically to the seed schedules makes this bound exact for every target, since the first \(k\) entries after \(j\) contain one from each seed. In particular,
+\begin{equation}\label{eq:prefix}
+ S_{j+k}\le kR\,c_j \qquad (j\ge1).
+\end{equation}
+For ties, apply the bound to targets decreasing to \(c_j\) from above, after the last copy of that value. Its larger prefix sum bounds \(S_{j+k}\).
+
+Run \(c_1,c_2,\ldots\) as consecutive contracts on one processor, assigned cyclically to \(k\) problem types. Just before contract \(j+k\) finishes, the last completed contracts for the \(k\) types are \(j,\ldots,j+k-1\). Their minimum length is \(c_j\). With the guarantee starting after one completion per type, the acceleration ratio against the benchmark that runs one requested type is therefore \(\sup_{j\ge1} S_{j+k}/c_j\). If strict length increase is required, replace each \(c_j\) by \(c_j(1+\varepsilon(1-2^{-j}))\). Every prefix ratio increases by at most \(1+\varepsilon\), and the lengths become strictly increasing.
+
+Bernstein, Finkelstein and Zilberstein \cite[Lemma~1 and Thm.~2]{bfz} show that the optimal cyclic ratio for one processor and \(k\) types is \(k(1+1/k)^{k+1}\). The normalized bound \((1+1/k)^{k+1}\), benchmarked against splitting time equally among the \(k\) types, is already in Zilberstein, Charpillet and Chassaing \cite[Lemma~2 and Thm.~3]{zcc}. Apply the cyclic lower bound to \eqref{eq:prefix} and let \(\varepsilon\) tend to zero. This proves the required bidding lower bound. The deterministic single-type bidding correspondence appears in Angelopoulos and L\'opez-Ortiz \cite[\S2]{alo}. The transfer above uses the uniform mean over \(k\) seed schedules.
+
+\section{A direct lower bound and attaining schedules}
+
+Here is a proof of the lower bound from \eqref{eq:prefix} without invoking the scheduling theorem. Set \(r_j=S_j/S_{j-1}>1\) for \(j\ge2\). Since \(c_j=S_j-S_{j-1}\), the prefix inequality gives
+\[
+ \prod_{i=1}^k r_{j+i}\le kR\,(1-1/r_j).
+\]
+The ratios are eventually bounded by \(kR\), because \(r_{j+k}\le S_{j+k}/S_j\le kR\). Sum logarithms from \(j=J\) to \(M\) with \(J\) large enough. The shifted sums of \(\log r_j\) differ from the unshifted sums only by finitely many bounded terms at the endpoints. Hence
+\[
+ \sum_{j=J}^M \log\frac{r_j^{k+1}}{r_j-1}
+   \le (M-J+1)\log(kR)+O_{k,R}(1).
+\]
+The logarithmic derivative of \(r^{k+1}/(r-1)\) has the sign of \(kr-(k+1)\). On \(r>1\) the minimum is \(k(1+1/k)^{k+1}\), at \(r=1+1/k\). Divide by the number of terms and let \(M\) grow. This gives \(R\ge(1+1/k)^{k+1}\).
+
+For the upper bound set \(a=1+1/k\). Schedule \(i\) bids \(a^i,a^{i+k},a^{i+2k},\ldots\), for \(0\le i<k\). At \(a^j<u\le a^{j+1}\) with \(j\ge0\), the total charge is the sum of \(a^0,\ldots,a^{j+k}\). Its normalized right limit at \(a^j\) is
+\[
+ \frac{1}{ka^j}\sum_{\ell=0}^{j+k} a^\ell
+   =a^{k+1}-a^{-j}.
+\]
+Inside the interval the ratio is no larger. At \(u=1\), the charge ends at exponent \(k-1\), so the ratio is \(a^k-1<a^{k+1}\). The right limits tend to \(a^{k+1}\), proving Theorem~\ref{thm:main}. The benchmark is a supremum and need not be achieved at a single target. The result concerns equal probabilities and gives no optimality claim for arbitrary probabilities on \(k\) schedules.
+
+With one bit, \(a=3/2\). For a target just above \(a^5\), the first schedule stops at \(a^6\) and the second at \(a^7\). Together they pay precisely the first eight entries of the merged list. The right-limit ratio is \(27/8-(2/3)^5=6305/1944\). At \(u=a^5\) itself the second schedule stops there, illustrating the inclusive stopping convention.
+
+\section*{Research disclosure}
+
+\begingroup\hyphenpenalty=10000\exhyphenpenalty=10000\emergencystretch=1em\relax
+Under human direction, ChatGPT Astra 6.2 (OpenAI) produced the discovery packet and direct online-bidding proof. OpenAI Codex reviewed the mathematical argument and revised the manuscript. GPT-6.2 Sol traced the prior contract-scheduling theorem, checked its transfer, prepared the finite replay and illustrated example, and assembled the release. DannyExperiments maintains the repository and is the preferred citation identity. No AI system is proposed as an author.
+\par\endgroup
+
+\begin{thebibliography}{9}
+\bibitem{as}
+S. Angelopoulos and B. Simon, \emph{Learning-augmented online bidding in stochastic settings}, NeurIPS (2025). \href{https://arxiv.org/abs/2510.25582}{arXiv:2510.25582}.
+\bibitem{zcc}
+S. Zilberstein, F. Charpillet, and P. Chassaing, \emph{Real-time problem-solving with contract algorithms}, IJCAI 1999, 1008--1013. \href{https://ijcai.org/proceedings/1999/0144.pdf}{Proceedings PDF}.
+\bibitem{bfz}
+D. S. Bernstein, L. Finkelstein, and S. Zilberstein, \emph{Contract algorithms and robots on rays: unifying two scheduling problems}, IJCAI 2003, 1211--1217. \href{https://ijcai.org/proceedings/2003/0172.pdf}{Proceedings PDF}.
+\bibitem{alo}
+S. Angelopoulos and A. L\'opez-Ortiz, \emph{Interruptible algorithms for multiproblem solving}, \href{https://arxiv.org/abs/1810.11291}{arXiv:1810.11291}, 2018.
+\bibitem{ckny}
+M. Chrobak, C. Kenyon, J. Noga, and N. E. Young, \emph{Incremental medians via online bidding}, Algorithmica \textbf{50} (2008), 455--478. \href{https://doi.org/10.1007/s00453-007-9005-x}{Journal record}.
+\bibitem{aak}
+S. Angelopoulos, D. Ars\'enio, and S. Kamali, \emph{Competitive sequencing with noisy advice}, \href{https://arxiv.org/abs/2111.05281}{arXiv:2111.05281}, 2021.
+\bibitem{abds}
+S. Angelopoulos, M. Bienkowski, C. D\"urr, and B. Simon, \emph{Contract scheduling with distributional and multiple advice}, IJCAI 2024, 3652--3660. \href{https://doi.org/10.24963/ijcai.2024/404}{Conference record}.
+\end{thebibliography}
+\end{document}

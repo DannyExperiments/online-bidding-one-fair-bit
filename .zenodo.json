@@ -1,0 +1,29 @@
+{
+  "title": "Online bidding with one fair bit",
+  "upload_type": "software",
+  "version": "1.0.0",
+  "publication_date": "2026-11-27",
+  "creators": [
+    {
+      "name": "DannyExperiments"
+    }
+  ],
+  "description": "One fair bit gives an optimal worst-target expected competitive ratio of 27/8 in online bidding. More generally, with k equally likely seeds the optimum is (1+1/k)^(k+1). The target is fixed independently of the seed. The bidder pays all bids through the first bid that reaches it. This answers the question posed in the conclusion of Angelopoulos and Simon’s NeurIPS 2025 paper.\n\nThe result applies a classical optimum for deterministic cyclic contract scheduling. Zilberstein, Charpillet and Chassaing obtained the same constant under their normalized benchmark. Bernstein, Finkelstein and Zilberstein proved the cyclic lower bound against the single-request benchmark, which scales it by k. The transfer merges the schedules and assigns bids to seeds cyclically. The next k entries after a target cutoff are then its k stopping bids. The note presents this reduction and a direct logarithmic proof. It makes no priority claim for the transfer.\n\nThe exact replay checks 480 geometric interiors, 480 endpoints, 480 right limits and a set of ties. The offline explorer shows finite costs and the limiting supremum. The result does not optimize arbitrary seed weights or target-dependent advice. Internally reviewed, with external peer review and formal verification pending.\n\nUnder human direction, ChatGPT Astra 6.2 (OpenAI) produced the discovery packet and direct online-bidding proof. OpenAI Codex reviewed the mathematical argument and revised the manuscript. GPT-6.2 Sol traced the prior contract-scheduling theorem, checked its transfer, prepared the finite replay and illustrated example, and assembled the release. DannyExperiments maintains the repository and is the preferred citation identity. No AI system is proposed as an author.",
+  "keywords": [
+    "online bidding",
+    "limited randomness",
+    "competitive ratio",
+    "contract scheduling",
+    "geometric schedules"
+  ],
+  "access_right": "open",
+  "license": "other-closed",
+  "notes": "All rights reserved. Publicly downloadable files are supplied without a repository-wide reuse license.",
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/DannyExperiments/online-bidding-one-fair-bit/releases/tag/v1.0.0",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    }
+  ]
+}

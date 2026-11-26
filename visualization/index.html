@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interleaved online bids</title>
+<style>
+:root{color-scheme:dark;--bg:#101b2e;--panel:#192a43;--ink:#f0f6ff;--muted:#bacee7;--mint:#80e8cf;--amber:#ffc385}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.52 system-ui,sans-serif}
+main{max-width:62rem;margin:auto;padding:clamp(1rem,4vw,2.5rem)}
+h1{font-size:clamp(2rem,7vw,3.45rem);line-height:1.08;margin:0 0 .6rem}
+h2{font-size:1.16rem;margin:0 0 .55rem}
+p{margin:.38rem 0 .85rem}
+.lead,.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:1.43fr 1fr;gap:1rem;align-items:start}
+.panel{background:var(--panel);border:1px solid #415a79;border-radius:1rem;padding:1rem}
+canvas{display:block;width:100%;aspect-ratio:12/8;touch-action:pan-y;cursor:grab}
+label{font-weight:640}
+select{appearance:auto;width:100%;font:inherit;color:inherit;background:#192a43;border:1px solid #6785aa;border-radius:.48rem;min-height:2.75rem;padding:.4rem;margin:.3rem 0 .8rem}
+label.control{display:flex;align-items:center;gap:.6rem;min-height:2.75rem}
+input{accent-color:var(--mint)}
+input[type=range]{width:100%;min-height:2.75rem}
+input[type=checkbox]{width:1.2rem;height:1.2rem;margin:0}
+.metric{border-top:1px solid #516786;padding:.68rem 0}
+.metric strong{display:block;font-size:1.36rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+summary{cursor:pointer;font-weight:700;min-height:2.75rem}
+details{margin-top:1rem}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+@media(max-width:44rem){.grid{grid-template-columns:1fr}.panel{padding:.85rem}}
+</style>
+</head>
+<body>
+<main>
+<h1>Interleaved online bids</h1>
+<p class="lead">A fair bit chooses one of two schedules. Move the target across a bid to see the stopping bids and how the expected ratio approaches 27/8.</p>
+<div class="grid">
+  <section class="panel">
+    <h2>Bids by seed, on a log scale</h2>
+    <canvas id="scene" width="720" height="480" aria-label="Rotating geometric bid lanes. A dotted cut separates bids below the target from stopping bids. Filled circles mark the stopping bids."></canvas>
+    <p id="corridor" class="muted"></p>
+    <label for="orbit">Rotate the camera</label>
+    <input id="orbit" type="range" min="-28" max="24" value="-9" aria-describedby="rotate-help">
+    <p id="rotate-help" class="muted">Drag the diagram or use the slider.</p>
+  </section>
+  <section class="panel">
+    <h2>Target and seed choices</h2>
+    <label for="seeds">Number of equally likely seeds</label>
+    <select id="seeds">
+      <option value="1">1 seed</option>
+      <option value="2" selected>2 seeds · one fair bit</option>
+      <option value="4">4 seeds · two fair bits</option>
+      <option value="8">8 seeds · three fair bits</option>
+    </select>
+    <label for="index">Breakpoint exponent j</label>
+    <input id="index" type="range" min="0" max="24" value="5">
+    <label class="control"><input id="above" type="checkbox" checked> Target just above the breakpoint</label>
+    <div aria-live="polite">
+      <div class="metric"><span>Target</span><strong id="target"></strong></div>
+      <div class="metric"><span id="ratio-label"></span><strong id="ratio"></strong></div>
+      <div class="metric"><span>Worst-target ratio</span><strong id="limit"></strong></div>
+      <p class="muted" id="stops"></p>
+    </div>
+  </section>
+</div>
+<details class="panel">
+  <summary>Where the ratio comes from</summary>
+  <p>Set a = 1 + 1/k. Seed i bids powers of a with exponents i, i+k, i+2k, and so on. Every bid below target is paid by its seed, and each seed pays its first bid at or above target.</p>
+  <p>Just above aʲ the k stopping bids have consecutive exponents j+1 through j+k. At aʲ itself the first stopping exponent is j, because a bid equal to the target succeeds. The right-limit ratio is aᵏ⁺¹ − a⁻ʲ and converges to aᵏ⁺¹.</p>
+</details>
+</main>
+<script>
+"use strict";
+const canvas=document.getElementById("scene");
+const pen=canvas.getContext("2d");
+const seedControl=document.getElementById("seeds");
+const indexControl=document.getElementById("index");
+const aboveControl=document.getElementById("above");
+const orbit=document.getElementById("orbit");
+const colors=["#80e8cf","#ffc385","#9bbfff","#e8b8fa","#ffe283","#80dee8","#efaaba","#aadd91"];
+
+function gcd(a,b) {
+  while(b!==0n) [a,b]=[b,a%b];
+  return a;
+}
+
+function fraction(n,d) {
+  const g=gcd(n,d);
+  return d===g ? String(n/g) : String(n/g)+"/"+String(d/g);
+}
+
+function params() {
+  const k=Number(seedControl.value);
+  const j=Number(indexControl.value);
+  const above=aboveControl.checked;
+  const stop=j+Number(above);
+  const end=stop+k-1;
+  return {k,j,above,stop,end};
+}
+
+function ratios(k,j,above) {
+  const p=BigInt(k+1);
+  const q=BigInt(k);
+  const power=BigInt(k+Number(above));
+  const idx=BigInt(j);
+  const denom=q**power*p**idx;
+  const numer=p**(power+idx)-q**(power+idx);
+  return [fraction(numer,denom),fraction(p**BigInt(k+1),q**BigInt(k+1))];
+}
+
+function project(x,y,z,angle) {
+  const side=x*Math.cos(angle)-y*Math.sin(angle);
+  const toward=x*Math.sin(angle)+y*Math.cos(angle);
+  const up=z*Math.cos(.55)+toward*Math.sin(.55);
+  const depth=toward*Math.cos(.55)-z*Math.sin(.55);
+  const zoom=12/(12-depth);
+  return {x:360+side*124*zoom,y:247-up*142*zoom,depth,zoom};
+}
+
+function draw() {
+  const {k,stop,end}=params();
+  const start=Math.max(0,end-10);
+  const angle=Number(orbit.value)*Math.PI/180;
+  const loc=i=>-2.05+4.1*(i-start)/Math.max(5,end-start);
+  const levels=i=>k===1 ? 0 : 1.36-2.72*i/(k-1);
+  pen.clearRect(0,0,canvas.width,canvas.height);
+  pen.lineCap="round";
+  const points=[];
+  for(let row=0;row<k;row+=1) {
+    const color=colors[row];
+    const y=levels(row);
+    const bids=[];
+    for(let i=start;i<=end;i+=1) {
+      if(i%k!==row) continue;
+      const pt=project(loc(i),y,i >= stop ? .15 : 0,angle);
+      bids.push(pt);
+      points.push({...pt,i,color,last:i>=stop});
+    }
+    pen.strokeStyle=color;pen.lineWidth=k<=2?6:3;
+    pen.beginPath();
+    bids.forEach((pt,i)=>i===0?pen.moveTo(pt.x,pt.y):pen.lineTo(pt.x,pt.y));
+    pen.stroke();
+  }
+  const cut=(loc(stop)+loc(stop-1))/2;
+  for(let i=0;i<9;i+=1) {
+    const y=-1.70+i*.39;
+    const a=project(cut,y,0,angle),b=project(cut,y+.20,0,angle);
+    pen.strokeStyle="#f0f6ff";pen.lineWidth=3;pen.beginPath();pen.moveTo(a.x,a.y);pen.lineTo(b.x,b.y);pen.stroke();
+  }
+  points.sort((a,b)=>a.depth-b.depth).forEach(pt=>{
+    const radius=(k<=2?23:15)*pt.zoom;
+    pen.fillStyle=pt.last?pt.color:"#192a43";
+    pen.beginPath();pen.arc(pt.x,pt.y,radius,0,Math.PI*2);pen.fill();
+    pen.strokeStyle=pt.color;pen.lineWidth=3;pen.stroke();
+    pen.fillStyle=pt.last?"#101b2e":"#f0f6ff";
+    pen.textAlign="center";pen.textBaseline="middle";
+    pen.font=(k<=2?"bold 23px":"bold 17px")+" system-ui";
+    pen.fillText(pt.i,pt.x,pt.y+1);
+  });
+  document.getElementById("corridor").textContent=start===0
+      ? "Labels show exponents. Filled circles are stopping bids."
+      : "Showing exponents "+start+"–"+end+". Earlier bids still count toward the cost.";
+}
+
+function update() {
+  const {k,j,above,stop,end}=params();
+  const [ratio,limit]=ratios(k,j,above);
+  document.getElementById("target").textContent=(above?"Just above ":"Exactly ")+"a^"+j;
+  document.getElementById("ratio-label").textContent=above?"Expected ratio, right limit":"Expected ratio, exact target";
+  document.getElementById("ratio").textContent=ratio;
+  document.getElementById("limit").textContent=limit;
+  document.getElementById("stops").textContent="Stopping exponents "+stop+"–"+end+"; a = "+(k+1)+"/"+k+".";
+  draw();
+}
+
+seedControl.addEventListener("change",update);
+indexControl.addEventListener("input",update);
+aboveControl.addEventListener("change",update);
+orbit.addEventListener("input",draw);
+let last=null;
+canvas.addEventListener("pointerdown",event=>{
+  if(event.button!==0)return;
+  last=event.clientX;canvas.setPointerCapture(event.pointerId);
+});
+canvas.addEventListener("pointermove",event=>{
+  if(last===null)return;
+  orbit.value=Math.max(-28,Math.min(24,Number(orbit.value)+Math.round((event.clientX-last)*1.5)));
+  last=event.clientX;draw();
+});
+for(const type of ["pointerup","pointercancel","lostpointercapture"])canvas.addEventListener(type,()=>{last=null;});
+update();
+</script>
+</body>
+</html>
